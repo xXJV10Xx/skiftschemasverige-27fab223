@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { MonthCalendar } from "../components/MonthCalendar";
 import { useAuth } from "../components/AuthProvider";
 import { fetchFavoritesForMonth, toggleFavorite } from "@/lib/favorites";
@@ -15,7 +16,7 @@ export default function Index() {
   const [month, setMonth] = useState(() => now.getMonth() + 1);
   const [lagNum, setLagNum] = useState<1 | 2 | 3 | 4 | 5>(1);
 
-  const { configured, user, signInWithGoogle, signInWithApple, signOut, loading } = useAuth();
+  const { configured, user, logout, loading } = useAuth();
 
   const [favorites, setFavorites] = useState<Set<string>>(() => new Set());
   const [favoritesLoading, setFavoritesLoading] = useState(false);
@@ -156,30 +157,15 @@ export default function Index() {
               <button
                 type="button"
                 className="h-10 rounded-xl bg-slate-100 px-4 text-sm font-semibold text-slate-900"
-                onClick={() => void signOut()}
+                onClick={() => void logout()}
                 disabled={loading}
               >
                 Logga ut
               </button>
             ) : (
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  className="h-10 rounded-xl bg-emerald-400 px-4 text-sm font-semibold text-slate-950 hover:bg-emerald-300 disabled:opacity-60"
-                  onClick={() => void signInWithGoogle()}
-                  disabled={loading || !configured}
-                >
-                  Google
-                </button>
-                <button
-                  type="button"
-                  className="h-10 rounded-xl bg-slate-100 px-4 text-sm font-semibold text-slate-900 hover:bg-slate-200 disabled:opacity-60"
-                  onClick={() => void signInWithApple()}
-                  disabled={loading || !configured}
-                >
-                  Apple
-                </button>
-              </div>
+              <Link className="text-sm text-emerald-300 hover:underline" to="/login">
+                Gå till inloggning
+              </Link>
             )}
           </div>
         </div>
