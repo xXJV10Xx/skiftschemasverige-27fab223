@@ -20,7 +20,7 @@ function mapAuthError(error: AuthError | Error | null) {
   const message = (error?.message ?? "").toLowerCase();
 
   if (message.includes("invalid login credentials")) return "Fel e-post eller lösenord.";
-  if (message.includes("email not confirmed") || message.includes("email_not_confirmed")) {
+  if (message.includes("email not confirmed")) {
     return "Du måste bekräfta din e-postadress innan du kan logga in.";
   }
   if (message.includes("invalid email")) return "Ange en giltig e-postadress.";
@@ -38,9 +38,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
 
   const configured = isSupabaseConfigured;
+  const appBaseUrl = import.meta.env.VITE_APP_BASE_URL ?? import.meta.env.VITE_APP_URL ?? window.location.origin;
 
   useEffect(() => {
-    if (!configured) {
+    if (!configured || !supabase) {
       setLoading(false);
       return;
     }
@@ -68,15 +69,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setLoading(false);
       });
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    const { data: authSubscription } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession);
       setUser(nextSession?.user ?? null);
-      setLoading(false);
     });
 
     return () => {
       mounted = false;
-      sub.subscription.unsubscribe();
+      authSubscription.subscription.unsubscribe();
     };
   }, [configured]);
 
@@ -87,47 +87,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       session,
       loading,
       login: async (email: string, password: string) => {
-        if (!configured) throw new Error("Supabase är inte konfigurerat i miljövariabler.");
+        if (!configured || !supabase) throw new Error("Supabase är inte konfigurerat i miljövariabler.");
 
         const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
         if (error) throw new Error(mapAuthError(error));
       },
       signUp: async (email: string, password: string) => {
-        if (!configured) throw new Error("Supabase är inte konfigurerat i miljövariabler.");
+        if (!configured || !supabase) throw new Error("Supabase är inte konfigurerat i miljövariabler.");
 
         const { error } = await supabase.auth.signUp({
           email: email.trim(),
           password,
           options: {
-            emailRedirectTo: "https://skiftschemasverige.se/login",
+            emailRedirectTo: `${appBaseUrl}/login`,
           },
         });
 
         if (error) throw new Error(mapAuthError(error));
       },
       logout: async () => {
-        if (!configured) return;
+        if (!configured || !supabase) return;
 
         const { error } = await supabase.auth.signOut();
         if (error) throw new Error(mapAuthError(error));
       },
       resetPassword: async (email: string) => {
-        if (!configured) throw new Error("Supabase är inte konfigurerat i miljövariabler.");
+        if (!configured || !supabase) throw new Error("Supabase är inte konfigurerat i miljövariabler.");
 
         const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-          redirectTo: "https://skiftschemasverige.se/reset-password",
+          redirectTo: `${appBaseUrl}/reset-password`,
         });
 
         if (error) throw new Error(mapAuthError(error));
       },
       updatePassword: async (password: string) => {
-        if (!configured) throw new Error("Supabase är inte konfigurerat i miljövariabler.");
+        if (!configured || !supabase) throw new Error("Supabase är inte konfigurerat i miljövariabler.");
 
         const { error } = await supabase.auth.updateUser({ password });
         if (error) throw new Error(mapAuthError(error));
       },
     }),
-    [loading, session, user, configured]
+    [loading, session, user, configured, appBaseUrl]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

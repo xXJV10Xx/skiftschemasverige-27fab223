@@ -14,6 +14,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const canAttemptAuth = email.trim().length > 0 && password.trim().length > 0;
 
   useEffect(() => {
     if (user) navigate("/", { replace: true });
@@ -85,7 +86,7 @@ export default function Login() {
             {error ? <div className="text-sm text-red-300">{error}</div> : null}
             {message ? <div className="text-sm text-emerald-300">{message}</div> : null}
 
-            <Button type="submit" className="w-full" disabled={loading || !configured}>
+            <Button type="submit" className="w-full" disabled={loading || !configured || !canAttemptAuth}>
               {loading ? "Loggar in..." : "Logga in"}
             </Button>
 
@@ -93,7 +94,7 @@ export default function Login() {
               type="button"
               variant="secondary"
               className="w-full"
-              disabled={loading || !configured || !email || !password}
+              disabled={loading || !configured || !canAttemptAuth}
               onClick={() => void onSignUp()}
             >
               Skapa konto
